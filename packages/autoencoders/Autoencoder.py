@@ -1,0 +1,43 @@
+import torch
+import numpy as np
+import torch.nn as nn
+from abc import ABC, abstractmethod
+
+
+class Autoencoder(nn.Module, ABC):
+    """
+    Clase abstracta que sirve de interfaz para multiples implementaciones de distintos tipos de autoencoders
+    """
+    def __init__(self, input_dim: int, embedding_dim: int = 32,
+                 epochs: int = 100, loss_threshold: float = 0, batch_size: int = 32,
+                 optimizer: torch.optim.Optimizer = torch.optim.Adam, lr: float = 1e-3,
+
+                 loss_fn: torch.nn.MSELoss = nn.MSELoss):
+
+        super().__init__()
+        self.input_dim = input_dim
+        self.embedding_dim = embedding_dim
+        self.epochs = epochs
+        self.loss_threshold = loss_threshold
+        self.batch_size = batch_size
+        self.optimizer = optimizer
+        self.lr = lr
+        self.loss_fn = loss_fn
+
+    @abstractmethod
+    def fit(self, data: np.ndarray):
+        """
+        Método encargado de llevar a cabo el entrenamiento del autoencoder
+        :param data: datos utilizados para el entrenamiento
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def transform(self, data: np.ndarray):
+        """
+        Metodo encargado de hacer uso del autoencoder y generar los embeddings
+        :param data: datos a transformar
+        :return:
+        """
+        pass
