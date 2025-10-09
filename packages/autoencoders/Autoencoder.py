@@ -8,7 +8,8 @@ class Autoencoder(nn.Module, ABC):
     """
     Clase abstracta que sirve de interfaz para multiples implementaciones de distintos tipos de autoencoders
     """
-    def __init__(self, input_dim: int,
+    def __init__(self,
+                 input_dim: int,
                  embedding_dim: int = 32,
                  epochs: int = 100,
                  loss_threshold: float = 0,
@@ -18,6 +19,7 @@ class Autoencoder(nn.Module, ABC):
                  loss_fn: torch.nn.MSELoss = nn.MSELoss()):
 
         super().__init__()
+
         self.input_dim = input_dim
         self.embedding_dim = embedding_dim
         self.epochs = epochs
@@ -27,6 +29,7 @@ class Autoencoder(nn.Module, ABC):
         self.lr = lr
         self.loss_fn = loss_fn
 
+    @abstractmethod
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         pass
 
