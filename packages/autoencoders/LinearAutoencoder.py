@@ -27,6 +27,7 @@ class LinearAutoencoder(Autoencoder):
             nn.Linear(64, 128),
             nn.ReLU(),
             nn.Linear(128, self.input_dim),
+            nn.Sigmoid()
         )
 
     def forward(self, x: torch.Tensor):
@@ -37,8 +38,9 @@ class LinearAutoencoder(Autoencoder):
     def fit(self, data: np.ndarray, debug: bool = False):
         if isinstance(data, np.ndarray):
             data = torch.tensor(data, dtype=torch.float32)
+
         dataloader = DataLoader(data, batch_size=self.batch_size, shuffle=True)
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
         self.train()
 
         for epoch in range(self.epochs):

@@ -5,7 +5,7 @@ from packages.autoencoders.Autoencoder import Autoencoder
 from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
 
 
-class MixedManifoldDetector():
+class MixedManifoldDetector:
     def __init__(self, input_dim: int = None, autoencoder: Autoencoder = None,
                  manifold_alg: sklearn.base.TransformerMixin = None):
 
@@ -19,13 +19,17 @@ class MixedManifoldDetector():
         else:
             self.autoencoder = autoencoder
 
-        self.manifold_alg = manifold_alg if manifold_alg is not None else TSNE()
+        self.manifold_alg = manifold_alg if manifold_alg is not None else TSNE(n_components=2,
+                                                                               perplexity=20,
+                                                                               n_iter_without_progress=25)
 
     def fit_transform(self, data: np.ndarray):
-        pass
+        self.autoencoder.fit(data=data, debug=True)
+        embeddings = self.autoencoder.transform(data)
+        return self.manifold_alg.fit_transform(embeddings)
 
     def fit(self, data: np.ndarray):
-        pass
+        self.fit_transform(data)
 
     def transform(self, data: np.ndarray):
         pass
