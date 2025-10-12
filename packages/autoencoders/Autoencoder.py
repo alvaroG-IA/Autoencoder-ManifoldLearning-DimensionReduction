@@ -16,7 +16,8 @@ class Autoencoder(nn.Module, ABC):
                  batch_size: int = 32,
                  optimizer_class: torch.optim.Optimizer = torch.optim.Adam,
                  lr: float = 1e-3,
-                 loss_fn: torch.nn.MSELoss = nn.MSELoss()):
+                 loss_fn: torch.nn.MSELoss = nn.MSELoss(),
+                 data_scaled: bool = False):
 
         super().__init__()
 
@@ -28,6 +29,7 @@ class Autoencoder(nn.Module, ABC):
         self.optimizer_class = optimizer_class
         self.lr = lr
         self.loss_fn = loss_fn
+        self.data_scaled = data_scaled
 
     @abstractmethod
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):

@@ -27,7 +27,10 @@ class LinearAutoencoder(Autoencoder):
             nn.Linear(64, 128),
             nn.ReLU(),
             nn.Linear(128, self.input_dim),
-            nn.Sigmoid()
+
+            nn.Sigmoid() if self.data_scaled else nn.Identity()        # añadimos una capa sigmoide para la salida
+                                                                            # en el caso de que los datos hayan sido
+                                                                            # estandarizados p
         )
 
     def forward(self, x: torch.Tensor):

@@ -20,12 +20,15 @@ class MixedManifoldDetector:
             self.autoencoder = autoencoder
 
         self.manifold_alg = manifold_alg if manifold_alg is not None else TSNE(n_components=2,
-                                                                               perplexity=20,
-                                                                               n_iter_without_progress=25)
+                                                                               perplexity=40,
+                                                                               n_iter_without_progress=50)
 
     def fit_transform(self, data: np.ndarray):
         self.autoencoder.fit(data=data, debug=True)
+        print("\n\033[92m[AUTOENCODER ENTRENADO CORRECTAMENTE]\033[0m\n")
         embeddings = self.autoencoder.transform(data)
+        print("\033[92m[EMBEDDINGS OBTENIDOS CORRECTAMENTE]\033[0m\n")
+        print("\033[93m[ENTRENANDO METODO MANIFOLDING ... ]\033[0m\n")
         return self.manifold_alg.fit_transform(embeddings)
 
     def fit(self, data: np.ndarray):
