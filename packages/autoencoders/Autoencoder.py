@@ -30,6 +30,7 @@ class Autoencoder(nn.Module, ABC):
         self.lr = lr
         self.loss_fn = loss_fn
         self.data_scaled = data_scaled
+        self.trained = False
 
     @abstractmethod
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
@@ -37,11 +38,13 @@ class Autoencoder(nn.Module, ABC):
 
 
     @abstractmethod
-    def fit(self, data: np.ndarray, debug: bool = False):
+    def fit(self, data: np.ndarray, min_delta: float = 1e-6, max_num_iters_without_progress: int = 20, debug: bool = False):
         """
         Método encargado de llevar a cabo el entrenamiento del autoencoder
         :param data: datos utilizados para el entrenamiento
         :param debug: parametro para decidir si se muestra por pantalla los resultados del entrenamiento
+        :param min_delta: valor minimo para el entrenamiento #####
+        :param max_num_iters_without_progress: valor minimo para el entrenamiento #####
         :return:
         """
         pass

@@ -13,22 +13,37 @@ MANIFOLD_MODEL = 'TSNE'
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("csv_path", help="Ruta del .cvs a procesar", type=str)
+    parser.add_argument("train_csv_path", help="Ruta del .cvs que se utilizará para entrenar el sistema", type=str)
+    parser.add_argument("test_csv_path", help="Ruta del .csv que se utilizara como datos de test del sistema", type=str)
     args = parser.parse_args()
+    """
+    train_path = 'data/FASHION_MNIST/fashion-mnist_train.csv'
+    test_path = 'data/FASHION_MNIST/fashion-mnist_test.csv'
+    """
 
-    df = pd.read_csv(args.csv_path)
+    train_df = pd.read_csv(args.train_csv_path)
+    test_df = pd.read_csv(args.test_csv_path)
 
-    labels = np.array(df['label'])
-    data = np.array(df.drop('label', axis=1))
+    train_labels = np.array(train_df['label'])
+    train_data = np.array(train_df.drop('label', axis=1))
+
+    test_labels = np.array(test_df['label'])
+    test_data = np.array(test_df.drop('label', axis=1))
+
+    train_shape = train_data.shape
+    test_shape = test_data.shape
+    if train_shape[1] != test_shape[1]:
+        raise ValueError('Train and test shapes do not match')
 
     if DATA_SCALED:
-        data = data / 255
+        train_data = train_data / 255
+        test_data = test_data / 255
 
-    input_dim = data.shape[1]
+    input_dim = train_data.shape[1]
     embedding_dim = 32
-    epochs = 200
+    epochs = 100
     loss_threshold = 1e-3
-    batch_size = 32
+    batch_size = 64
     optimizer_class = torch.optim.Adam
     lr = 1e-3
     loss_fn = torch.nn.MSELoss()
@@ -51,21 +66,41 @@ def main():
         manifold_alg = LocallyLinearEmbedding(n_neighbors=10, n_components=2)
 
     mx = MixedManifoldDetector(autoencoder=ae, manifold_alg=manifold_alg)
-    pts_2d = mx.fit_transform(data=data)
+    pts_2d_train = mx.fit_transform(data=train_data)
+    pts_2d_test = mx.transform(data=test_data, k=10)
 
-    plt.scatter(pts_2d[:, 0], pts_2d[:, 1], c=labels, cmap='jet', s=1)
+    # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE ENTRENAMIENTO ---
+
+    plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], c=train_labels, cmap='jet', s=1)
     plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
     plt.colorbar(label='Digit')
-    plt.savefig(f"{args.csv_path}_{MANIFOLD_MODEL}_labels.png")
+    plt.savefig(f"{args.train_csv_path}_{MANIFOLD_MODEL}_labels.png")
     plt.close()
 
-    plt.scatter(pts_2d[:, 0], pts_2d[:, 1], s=1)
+    plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], s=1)
     plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
-    plt.savefig(f"{args.csv_path}_{MANIFOLD_MODEL}.png")
+    plt.savefig(f"{args.train_csv_path}_{MANIFOLD_MODEL}.png")
+    plt.close()
+
+    # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE TEST ---
+
+    plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], c=test_labels, cmap='jet', s=1)
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.xlabel('Component 1')
+    plt.ylabel('Component 2')
+    plt.colorbar(label='Digit')
+    plt.savefig(f"{args.test_csv_path}_{MANIFOLD_MODEL}_labels.png")
+    plt.close()
+
+    plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], s=1)
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.xlabel('Component 1')
+    plt.ylabel('Component 2')
+    plt.savefig(f"{args.test_csv_path}_{MANIFOLD_MODEL}.png")
     plt.close()
 
 
