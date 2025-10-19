@@ -1,6 +1,6 @@
 import numpy as np
 import sklearn
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, trustworthiness
 from sklearn.metrics import pairwise_distances
 from packages.autoencoders.Autoencoder import Autoencoder
 from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
@@ -29,7 +29,7 @@ class MixedManifoldDetector:
         self.train_embeddings = None
         self.train_2d = None
 
-    def fit_transform(self, data: np.ndarray):
+    def fit_transform(self, data: np.ndarray, n_neighbors: int = 5):
         self.autoencoder.fit(data=data, debug=True)
         if self.autoencoder.trained:
             print("\n\033[92m[AUTOENCODER ENTRENADO CORRECTAMENTE]\033[0m\n")
@@ -45,8 +45,11 @@ class MixedManifoldDetector:
         self.train_data = data
         self.train_embeddings = np.array(embeddings)
         self.train_2d = pts2d
-
         self.trained = True     # marcamos como entrenado correctamente el sistema
+
+        print(f"\033[94m[TRUSTWORTHINESS RESULTS]\033[0m")
+        tw_final = trustworthiness(data, self.train_2d, n_neighbors=n_neighbors)
+        print(f" - Visualización 2D (original → 2D): {tw_final:.4f}")
 
         return pts2d
 

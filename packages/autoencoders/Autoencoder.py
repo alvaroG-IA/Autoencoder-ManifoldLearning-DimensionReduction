@@ -2,12 +2,18 @@ import torch
 import numpy as np
 import torch.nn as nn
 from abc import ABC, abstractmethod
+from torch.utils.data import DataLoader
+from sklearn.exceptions import NotFittedError
 
 
 class Autoencoder(nn.Module, ABC):
     """
-    Clase abstracta que sirve de interfaz para multiples implementaciones de distintos tipos de autoencoders
+    Clase base abstracta para distintos tipos de autoencoders.
+    Contiene la lógica común de entrenamiento (fit) y transformación (transform).
+    Las subclases solo necesitan definir el forward (encoder+decoder)
+    y, opcionalmente, un término de regularización.
     """
+
     def __init__(self,
                  input_dim: int,
                  embedding_dim: int = 32,
@@ -16,9 +22,8 @@ class Autoencoder(nn.Module, ABC):
                  batch_size: int = 32,
                  optimizer_class: torch.optim.Optimizer = torch.optim.Adam,
                  lr: float = 1e-3,
-                 loss_fn: torch.nn.MSELoss = nn.MSELoss(),
+                 loss_fn: torch.nn.Module = nn.MSELoss(),
                  data_scaled: bool = False):
-
         super().__init__()
 
         self.input_dim = input_dim
@@ -34,26 +39,83 @@ class Autoencoder(nn.Module, ABC):
 
     @abstractmethod
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
-        pass
-
-
-    @abstractmethod
-    def fit(self, data: np.ndarray, min_delta: float = 1e-6, max_num_iters_without_progress: int = 20, debug: bool = False):
         """
-        Método encargado de llevar a cabo el entrenamiento del autoencoder
-        :param data: datos utilizados para el entrenamiento
-        :param debug: parametro para decidir si se muestra por pantalla los resultados del entrenamiento
-        :param min_delta: valor minimo para el entrenamiento #####
-        :param max_num_iters_without_progress: valor minimo para el entrenamiento #####
-        :return:
+        Debe devolver (embedding, reconstrucción)
         """
         pass
 
-    @abstractmethod
+    def regularization(self, embedding: torch.Tensor) -> torch.Tensor:
+        """
+        Hook para añadir regularización (ej. sparsity, contractive, etc.)
+        Por defecto no añade nada.
+        """
+        return torch.tensor(0.0, device=embedding.device)
+
+    def fit(self,
+            data: np.ndarray,
+            min_delta: float = 2e-6,
+            max_num_iters_without_progress: int = 20,
+            debug: bool = False):
+        """
+        Método de entrenamiento genérico.
+        :param data: datos de entrenamiento
+        :param min_delta: mínima mejora para considerar progreso
+        :param max_num_iters_without_progress: early stopping por falta de mejora
+        :param debug: imprimir logs
+        """
+        if isinstance(data, np.ndarray):
+            data = torch.tensor(data, dtype=torch.float32)
+
+        dataloader = DataLoader(data, batch_size=self.batch_size, shuffle=True)
+        optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
+
+        self.train()
+        last_avg_loss = np.inf
+        counter = 0
+
+        for epoch in range(self.epochs):
+            total_loss = 0
+            for batch in dataloader:
+                optimizer.zero_grad()
+                embedding, recon = self(batch)
+                loss = self.loss_fn(recon, batch)
+                loss += self.regularization(embedding)
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+
+            avg_loss = total_loss / len(dataloader)
+
+            if avg_loss < self.loss_threshold:
+                print(f"Entrenamiento detenido en la época {epoch+1}: pérdida {avg_loss:.6f} < threshold {self.loss_threshold:.6f}")
+                break
+
+            if (last_avg_loss - avg_loss) < min_delta:
+                counter += 1
+                if counter >= max_num_iters_without_progress:
+                    print(f"Entrenamiento detenido en la época {epoch+1} por falta de mejora ({max_num_iters_without_progress} épocas). Última pérdida: {avg_loss:.6f}")
+                    break
+            else:
+                counter = 0
+
+            if debug:
+                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f}, Counter: {counter}")
+
+            last_avg_loss = avg_loss
+
+        self.trained = True
+
     def transform(self, data: np.ndarray) -> torch.Tensor:
         """
-        Metodo encargado de hacer uso del autoencoder y generar los embeddings
-        :param data: datos a transformar
-        :return:
+        Devuelve el embedding de los datos usando el encoder.
         """
-        pass
+        if not self.trained:
+            raise NotFittedError("El autoencoder no ha sido entrenado aún.")
+
+        if isinstance(data, np.ndarray):
+            data = torch.tensor(data, dtype=torch.float32)
+
+        self.eval()
+        with torch.no_grad():
+            embedding, _ = self(data)
+        return embedding

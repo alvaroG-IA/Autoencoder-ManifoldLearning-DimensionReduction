@@ -5,10 +5,12 @@ import torch
 import matplotlib.pyplot as plt
 from packages.MixedManifoldDetector import MixedManifoldDetector
 from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
+from packages.autoencoders.LinearSparseAutoencoder import LinearSparseAutoencoder
 from sklearn.manifold import TSNE, LocallyLinearEmbedding
 
 DATA_SCALED = True
 MANIFOLD_MODEL = 'TSNE'
+AUTOENCODER_TYPE = 'LinearAutoencoder'
 
 
 def main():
@@ -17,8 +19,8 @@ def main():
     parser.add_argument("test_csv_path", help="Ruta del .csv que se utilizara como datos de test del sistema", type=str)
     args = parser.parse_args()
     """
-    train_path = 'data/FASHION_MNIST/fashion-mnist_train.csv'
-    test_path = 'data/FASHION_MNIST/fashion-mnist_test.csv'
+    train_path = 'data/CIFAR-10/train.csv'
+    test_path = 'data/CIFAR-10/test.csv'
     """
 
     train_df = pd.read_csv(args.train_csv_path)
@@ -49,19 +51,37 @@ def main():
     loss_fn = torch.nn.MSELoss()
     data_scaled = DATA_SCALED
 
-    ae = LinearAutoencoder(
-        input_dim=input_dim,
-        embedding_dim=embedding_dim,
-        epochs=epochs,
-        loss_threshold=loss_threshold,
-        batch_size=batch_size,
-        optimizer_class=optimizer_class,
-        lr=lr,
-        loss_fn=loss_fn,
-        data_scaled=data_scaled
-    )
+    if AUTOENCODER_TYPE == 'LinearAutoencoder':
+        print('Using LinearAutoencoder')
+        ae = LinearAutoencoder(
+            input_dim=input_dim,
+            embedding_dim=embedding_dim,
+            epochs=epochs,
+            loss_threshold=loss_threshold,
+            batch_size=batch_size,
+            optimizer_class=optimizer_class,
+            lr=lr,
+            loss_fn=loss_fn,
+            data_scaled=data_scaled
+        )
+    elif AUTOENCODER_TYPE == 'LinearSparseAutoencoder':
+        print('Using LinearSparseAutoencoder')
+        lamda_l1 = 1e-4
+        ae = LinearSparseAutoencoder(
+            lambda_l1=lamda_l1,
+            input_dim=input_dim,
+            embedding_dim=embedding_dim,
+            epochs=epochs,
+            loss_threshold=loss_threshold,
+            batch_size=batch_size,
+            optimizer_class=optimizer_class,
+            lr=lr,
+            loss_fn=loss_fn,
+            data_scaled=data_scaled
+        )
+
     if MANIFOLD_MODEL == 'TSNE':
-        manifold_alg = TSNE(n_components=2, perplexity=35, n_iter_without_progress=50)
+        manifold_alg = TSNE(n_components=2, perplexity=25, n_iter_without_progress=50)
     else:
         manifold_alg = LocallyLinearEmbedding(n_neighbors=10, n_components=2)
 
@@ -72,35 +92,35 @@ def main():
     # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE ENTRENAMIENTO ---
 
     plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], c=train_labels, cmap='jet', s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TRAIN (ANOTADO)')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
     plt.colorbar(label='Digit')
-    plt.savefig(f"{args.train_csv_path}_{MANIFOLD_MODEL}_labels.png")
+    plt.savefig(f"{args.train_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}_labels.png")
     plt.close()
 
     plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TRAIN')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
-    plt.savefig(f"{args.train_csv_path}_{MANIFOLD_MODEL}.png")
+    plt.savefig(f"{args.train_csv_path}_{AUTOENCODER_TYPE}{MANIFOLD_MODEL}.png")
     plt.close()
 
     # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE TEST ---
 
     plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], c=test_labels, cmap='jet', s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TEST (ANOTADO)')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
     plt.colorbar(label='Digit')
-    plt.savefig(f"{args.test_csv_path}_{MANIFOLD_MODEL}_labels.png")
+    plt.savefig(f"{args.test_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}_labels.png")
     plt.close()
 
     plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL}')
+    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} (TEST)')
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
-    plt.savefig(f"{args.test_csv_path}_{MANIFOLD_MODEL}.png")
+    plt.savefig(f"{args.test_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}.png")
     plt.close()
 
 
