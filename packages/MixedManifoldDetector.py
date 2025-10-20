@@ -47,9 +47,9 @@ class MixedManifoldDetector:
         self.train_2d = pts2d
         self.trained = True     # marcamos como entrenado correctamente el sistema
 
-        print(f"\033[94m[TRUSTWORTHINESS RESULTS]\033[0m")
+        """print(f"\033[94m[TRUSTWORTHINESS RESULTS]\033[0m")
         tw_final = trustworthiness(data, self.train_2d, n_neighbors=n_neighbors)
-        print(f" - Visualización 2D (original → 2D): {tw_final:.4f}")
+        print(f" - Visualización 2D (original → 2D): {tw_final:.4f}")"""
 
         return pts2d
 

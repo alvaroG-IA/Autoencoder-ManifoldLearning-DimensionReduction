@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 from packages.MixedManifoldDetector import MixedManifoldDetector
 from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
 from packages.autoencoders.LinearSparseAutoencoder import LinearSparseAutoencoder
+from packages.autoencoders.DenoisingSparseAutoencoder import DenoisingSparseAutoencoder
 from sklearn.manifold import TSNE, LocallyLinearEmbedding
 
 DATA_SCALED = True
 MANIFOLD_MODEL = 'TSNE'
-AUTOENCODER_TYPE = 'LinearAutoencoder'
+AUTOENCODER_TYPE = 'LinearSparseAutoencoder'
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
     parser.add_argument("train_csv_path", help="Ruta del .cvs que se utilizará para entrenar el sistema", type=str)
     parser.add_argument("test_csv_path", help="Ruta del .csv que se utilizara como datos de test del sistema", type=str)
     args = parser.parse_args()
+
     """
     train_path = 'data/CIFAR-10/train.csv'
     test_path = 'data/CIFAR-10/test.csv'
@@ -43,36 +45,62 @@ def main():
 
     input_dim = train_data.shape[1]
     embedding_dim = 32
-    epochs = 100
+    epochs = 200
     loss_threshold = 1e-3
-    batch_size = 64
+    min_delta = 1e-3
+    max_num_iters_without_progress = 50
+    batch_size = 32
     optimizer_class = torch.optim.Adam
     lr = 1e-3
     loss_fn = torch.nn.MSELoss()
     data_scaled = DATA_SCALED
+    lamda_l1 = 1e-4
+    noise_factor = 0.25
 
-    if AUTOENCODER_TYPE == 'LinearAutoencoder':
-        print('Using LinearAutoencoder')
-        ae = LinearAutoencoder(
-            input_dim=input_dim,
-            embedding_dim=embedding_dim,
-            epochs=epochs,
-            loss_threshold=loss_threshold,
-            batch_size=batch_size,
-            optimizer_class=optimizer_class,
-            lr=lr,
-            loss_fn=loss_fn,
-            data_scaled=data_scaled
-        )
-    elif AUTOENCODER_TYPE == 'LinearSparseAutoencoder':
+    if AUTOENCODER_TYPE == 'LinearSparseAutoencoder':
         print('Using LinearSparseAutoencoder')
-        lamda_l1 = 1e-4
         ae = LinearSparseAutoencoder(
             lambda_l1=lamda_l1,
             input_dim=input_dim,
             embedding_dim=embedding_dim,
             epochs=epochs,
             loss_threshold=loss_threshold,
+            min_delta=min_delta,
+            max_num_iters_without_progress=max_num_iters_without_progress,
+            batch_size=batch_size,
+            optimizer_class=optimizer_class,
+            lr=lr,
+            loss_fn=loss_fn,
+            data_scaled=data_scaled
+        )
+
+    elif AUTOENCODER_TYPE == 'DenoisingSparseAutoencoder':
+        print('Using DenoisingSparseAutoencoder')
+        ae = DenoisingSparseAutoencoder(
+            noise_factor=noise_factor,
+            lambda_l1=lamda_l1,
+            input_dim=input_dim,
+            embedding_dim=embedding_dim,
+            epochs=epochs,
+            loss_threshold=loss_threshold,
+            min_delta=min_delta,
+            max_num_iters_without_progress=max_num_iters_without_progress,
+            batch_size=batch_size,
+            optimizer_class=optimizer_class,
+            lr=lr,
+            loss_fn=loss_fn,
+            data_scaled=data_scaled
+        )
+
+    else:
+        print('Using LinearAutoencoder')
+        ae = LinearAutoencoder(
+            input_dim=input_dim,
+            embedding_dim=embedding_dim,
+            epochs=epochs,
+            loss_threshold=loss_threshold,
+            min_delta=min_delta,
+            max_num_iters_without_progress=max_num_iters_without_progress,
             batch_size=batch_size,
             optimizer_class=optimizer_class,
             lr=lr,

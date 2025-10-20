@@ -19,6 +19,8 @@ class Autoencoder(nn.Module, ABC):
                  embedding_dim: int = 32,
                  epochs: int = 100,
                  loss_threshold: float = 0,
+                 min_delta: float = 1e-6,
+                 max_num_iters_without_progress: int = 20,
                  batch_size: int = 32,
                  optimizer_class: torch.optim.Optimizer = torch.optim.Adam,
                  lr: float = 1e-3,
@@ -30,6 +32,8 @@ class Autoencoder(nn.Module, ABC):
         self.embedding_dim = embedding_dim
         self.epochs = epochs
         self.loss_threshold = loss_threshold
+        self.min_delta = min_delta
+        self.max_num_iters_without_progress = max_num_iters_without_progress
         self.batch_size = batch_size
         self.optimizer_class = optimizer_class
         self.lr = lr
@@ -51,16 +55,20 @@ class Autoencoder(nn.Module, ABC):
         """
         return torch.tensor(0.0, device=embedding.device)
 
+    def add_noise(self, data) -> torch.Tensor:
+        """
+        Hook para añadir ruido en el caso de usar un Autoencoeder de estructura denoising
+        :param data:
+        :return:
+        """
+        return data
+
     def fit(self,
             data: np.ndarray,
-            min_delta: float = 2e-6,
-            max_num_iters_without_progress: int = 20,
             debug: bool = False):
         """
         Método de entrenamiento genérico.
         :param data: datos de entrenamiento
-        :param min_delta: mínima mejora para considerar progreso
-        :param max_num_iters_without_progress: early stopping por falta de mejora
         :param debug: imprimir logs
         """
         if isinstance(data, np.ndarray):
@@ -77,7 +85,8 @@ class Autoencoder(nn.Module, ABC):
             total_loss = 0
             for batch in dataloader:
                 optimizer.zero_grad()
-                embedding, recon = self(batch)
+                noisy_batch = self.add_noise(batch)
+                embedding, recon = self(noisy_batch)
                 loss = self.loss_fn(recon, batch)
                 loss += self.regularization(embedding)
                 loss.backward()
@@ -90,18 +99,17 @@ class Autoencoder(nn.Module, ABC):
                 print(f"Entrenamiento detenido en la época {epoch+1}: pérdida {avg_loss:.6f} < threshold {self.loss_threshold:.6f}")
                 break
 
-            if (last_avg_loss - avg_loss) < min_delta:
+            if (last_avg_loss - avg_loss) < self.min_delta:
                 counter += 1
-                if counter >= max_num_iters_without_progress:
-                    print(f"Entrenamiento detenido en la época {epoch+1} por falta de mejora ({max_num_iters_without_progress} épocas). Última pérdida: {avg_loss:.6f}")
+                if counter >= self.max_num_iters_without_progress:
+                    print(f"Entrenamiento detenido en la época {epoch+1} por falta de mejora ({self.max_num_iters_without_progress} épocas). Última pérdida: {avg_loss:.6f}")
                     break
             else:
                 counter = 0
+                last_avg_loss = avg_loss
 
             if debug:
-                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f}, Counter: {counter}")
-
-            last_avg_loss = avg_loss
+                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f} - Perdida a comparar {last_avg_loss}, Counter: {counter}")
 
         self.trained = True
 
