@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from packages.Utils import generate_plot
 from packages.MixedManifoldDetector import MixedManifoldDetector
 from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
 from packages.autoencoders.LinearSparseAutoencoder import LinearSparseAutoencoder
@@ -11,10 +12,12 @@ from sklearn.manifold import TSNE, LocallyLinearEmbedding
 
 DATA_SCALED = True
 MANIFOLD_MODEL = 'TSNE'
-AUTOENCODER_TYPE = 'LinearSparseAutoencoder'
+AUTOENCODER_TYPE = 'LinearAutoencoder'
 
 
 def main():
+    global AUTOENCODER_TYPE
+
     parser = argparse.ArgumentParser()
     parser.add_argument("train_csv_path", help="Ruta del .cvs que se utilizará para entrenar el sistema", type=str)
     parser.add_argument("test_csv_path", help="Ruta del .csv que se utilizara como datos de test del sistema", type=str)
@@ -45,11 +48,11 @@ def main():
 
     input_dim = train_data.shape[1]
     embedding_dim = 32
-    epochs = 200
-    loss_threshold = 1e-3
+    epochs = 100
+    loss_threshold = 1e-4
     min_delta = 1e-3
-    max_num_iters_without_progress = 50
-    batch_size = 32
+    max_num_iters_without_progress = 30
+    batch_size = 64
     optimizer_class = torch.optim.Adam
     lr = 1e-3
     loss_fn = torch.nn.MSELoss()
@@ -94,6 +97,7 @@ def main():
 
     else:
         print('Using LinearAutoencoder')
+        AUTOENCODER_TYPE = 'LinearAutoencoder'
         ae = LinearAutoencoder(
             input_dim=input_dim,
             embedding_dim=embedding_dim,
@@ -109,48 +113,33 @@ def main():
         )
 
     if MANIFOLD_MODEL == 'TSNE':
-        manifold_alg = TSNE(n_components=2, perplexity=25, n_iter_without_progress=50)
+        manifold_alg = TSNE(n_components=2, perplexity=15, n_iter_without_progress=50)
     else:
         manifold_alg = LocallyLinearEmbedding(n_neighbors=10, n_components=2)
 
     mx = MixedManifoldDetector(autoencoder=ae, manifold_alg=manifold_alg)
     pts_2d_train = mx.fit_transform(data=train_data)
-    pts_2d_test = mx.transform(data=test_data, k=10)
+    pts_2d_test = mx.transform(data=test_data, k=5)
 
     # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE ENTRENAMIENTO ---
 
-    plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], c=train_labels, cmap='jet', s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TRAIN (ANOTADO)')
-    plt.xlabel('Component 1')
-    plt.ylabel('Component 2')
-    plt.colorbar(label='Digit')
-    plt.savefig(f"{args.train_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}_labels.png")
-    plt.close()
+    generate_plot(pts=pts_2d_train, labels=train_labels,
+                  data_name=args.train_csv_path, manifold_model=MANIFOLD_MODEL,
+                  autoencoder_model=AUTOENCODER_TYPE)
 
-    plt.scatter(pts_2d_train[:, 0], pts_2d_train[:, 1], s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TRAIN')
-    plt.xlabel('Component 1')
-    plt.ylabel('Component 2')
-    plt.savefig(f"{args.train_csv_path}_{AUTOENCODER_TYPE}{MANIFOLD_MODEL}.png")
-    plt.close()
+    generate_plot(pts=pts_2d_train,
+                  data_name=args.train_csv_path, manifold_model=MANIFOLD_MODEL,
+                  autoencoder_model=AUTOENCODER_TYPE)
 
     # --- GENERAMOS LOS PLOTS PARA EL CONJUNTO DE TEST ---
 
-    plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], c=test_labels, cmap='jet', s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} TEST (ANOTADO)')
-    plt.xlabel('Component 1')
-    plt.ylabel('Component 2')
-    plt.colorbar(label='Digit')
-    plt.savefig(f"{args.test_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}_labels.png")
-    plt.close()
+    generate_plot(pts=pts_2d_test, labels=test_labels,
+                  data_name=args.test_csv_path, manifold_model=MANIFOLD_MODEL,
+                  autoencoder_model=AUTOENCODER_TYPE)
 
-    plt.scatter(pts_2d_test[:, 0], pts_2d_test[:, 1], s=1)
-    plt.title(f'MIXED MANIFOLD DETECTION {MANIFOLD_MODEL} (TEST)')
-    plt.xlabel('Component 1')
-    plt.ylabel('Component 2')
-    plt.savefig(f"{args.test_csv_path}_{AUTOENCODER_TYPE}_{MANIFOLD_MODEL}.png")
-    plt.close()
-
+    generate_plot(pts=pts_2d_test,
+                  data_name=args.test_csv_path, manifold_model=MANIFOLD_MODEL,
+                  autoencoder_model=AUTOENCODER_TYPE)
 
 if __name__ == "__main__":
     main()

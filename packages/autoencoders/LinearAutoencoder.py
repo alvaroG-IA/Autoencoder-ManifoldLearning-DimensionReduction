@@ -7,11 +7,11 @@ class LinearAutoencoder(Autoencoder):
         super().__init__(**kwargs)
 
         self.encoder = nn.Sequential(
-            nn.Linear(self.input_dim, 128),     # Capa Linear Nº1
+            nn.Linear(self.input_dim, 256),     # Capa Linear Nº1
             nn.ReLU(),
-            nn.Linear(128, 64),       # Capa Linear Nº2
+            nn.Linear(256, 128),       # Capa Linear Nº2
             nn.ReLU(),
-            nn.Linear(64, 64),        # Capa Linear Nº3
+            nn.Linear(128, 64),        # Capa Linear Nº3
             nn.ReLU(),
             nn.Linear(64, self.embedding_dim),   # Capa generadora de embedding
         )
@@ -19,11 +19,11 @@ class LinearAutoencoder(Autoencoder):
         self.decoder = nn.Sequential(
             nn.Linear(self.embedding_dim, 64),
             nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
             nn.Linear(64, 128),
             nn.ReLU(),
-            nn.Linear(128, self.input_dim),
+            nn.Linear(128, 256),
+            nn.ReLU(),
+            nn.Linear(256, self.input_dim),
 
             nn.Sigmoid() if self.data_scaled else nn.Identity()        # añadimos una capa sigmoide para la salida
                                                                        # en el caso de que los datos hayan sido
@@ -34,3 +34,6 @@ class LinearAutoencoder(Autoencoder):
         embedding = self.encoder(x)
         z = self.decoder(embedding)
         return embedding, z
+
+    def encode(self, x):
+        return self.encoder(x)

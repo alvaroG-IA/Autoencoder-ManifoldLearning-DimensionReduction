@@ -7,7 +7,9 @@ from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
 
 
 class MixedManifoldDetector:
-    def __init__(self, input_dim: int = None, autoencoder: Autoencoder = None,
+    def __init__(self,
+                 input_dim: int = None,
+                 autoencoder: Autoencoder = None,
                  manifold_alg: sklearn.base.TransformerMixin = None):
 
         # SOLUCIÓN TEMPORAL AL PROBLEMA DE INPUT_DIM EN EL AUTOENCODER POR DEFECTO

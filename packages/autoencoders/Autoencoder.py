@@ -48,6 +48,13 @@ class Autoencoder(nn.Module, ABC):
         """
         pass
 
+    @abstractmethod
+    def encode(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Debe devolver (embedding)
+        """
+        pass
+
     def regularization(self, embedding: torch.Tensor) -> torch.Tensor:
         """
         Hook para añadir regularización (ej. sparsity, contractive, etc.)
@@ -57,9 +64,8 @@ class Autoencoder(nn.Module, ABC):
 
     def add_noise(self, data) -> torch.Tensor:
         """
-        Hook para añadir ruido en el caso de usar un Autoencoeder de estructura denoising
-        :param data:
-        :return:
+        Hook para añadir ruido en el caso de usar un Autoencoeder de estructura denoising.
+        Por defecto no añadirá ningún ruido.
         """
         return data
 
@@ -95,21 +101,24 @@ class Autoencoder(nn.Module, ABC):
 
             avg_loss = total_loss / len(dataloader)
 
+            if debug:
+                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f} - Perdida a comparar {last_avg_loss},"
+                      f" Counter: {counter}")
+
             if avg_loss < self.loss_threshold:
-                print(f"Entrenamiento detenido en la época {epoch+1}: pérdida {avg_loss:.6f} < threshold {self.loss_threshold:.6f}")
+                print(f"Entrenamiento detenido en la época {epoch+1}: pérdida {avg_loss:.6f} "
+                      f"< threshold {self.loss_threshold:.6f}")
                 break
 
             if (last_avg_loss - avg_loss) < self.min_delta:
                 counter += 1
-                if counter >= self.max_num_iters_without_progress:
-                    print(f"Entrenamiento detenido en la época {epoch+1} por falta de mejora ({self.max_num_iters_without_progress} épocas). Última pérdida: {avg_loss:.6f}")
+                if counter == self.max_num_iters_without_progress:
+                    print(f"Entrenamiento detenido en la época {epoch+1} por falta de mejora ({self.min_delta} "
+                          f"durante las últmas {self.max_num_iters_without_progress} épocas). Última pérdida: {avg_loss:.6f}")
                     break
             else:
                 counter = 0
                 last_avg_loss = avg_loss
-
-            if debug:
-                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f} - Perdida a comparar {last_avg_loss}, Counter: {counter}")
 
         self.trained = True
 
@@ -125,5 +134,5 @@ class Autoencoder(nn.Module, ABC):
 
         self.eval()
         with torch.no_grad():
-            embedding, _ = self(data)
+            embedding = self.encode(data)
         return embedding
