@@ -69,3 +69,12 @@ Remplaza `conjunto_train.csv` por la ruta del documento `.csv` que desas utiliza
       - `LinearAutoencoder.py`: implementación de la arquitectura de un autoencoder lineal.
       - `LineasSparseAutoencoder`: implementación de autoencoder lineal con regularización sparse (L1)
       - `DenoisingSparseAutoencoder`: implementación de autoencoder lineal con tanto regularización sparse como con regularización denoising.
+
+## 📄 Licencia
+Este proyecto está licenciado bajo la Licencia MIT. Revisar el archivo LICENSE para más detalles (si lo incluyes).
+
+## 📨 Contacto
+Álvaro García Velasco
+e-mail: alvarogarciavelasco1212@gmail.com
+GitHub: alvaroG-IA[https://github.com/alvaroG-IA]
+LinkedIn: https://www.linkedin.com/in/alvaro-garcia-velasco/
