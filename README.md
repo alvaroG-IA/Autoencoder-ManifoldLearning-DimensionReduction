@@ -75,6 +75,6 @@ Este proyecto está licenciado bajo la Licencia MIT. Revisar el archivo LICENSE 
 
 ## 📨 Contacto
 Álvaro García Velasco
-e-mail: alvarogarciavelasco1212@gmail.com
-GitHub: alvaroG-IA[https://github.com/alvaroG-IA]
-LinkedIn: https://www.linkedin.com/in/alvaro-garcia-velasco/
+- e-mail: alvarogarciavelasco1212@gmail.com
+- GitHub: alvaroG-IA[https://github.com/alvaroG-IA]
+- LinkedIn: https://www.linkedin.com/in/alvaro-garcia-velasco/
