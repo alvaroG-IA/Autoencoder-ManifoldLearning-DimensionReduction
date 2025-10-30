@@ -22,3 +22,50 @@ Este proyecto incluye:
    git clone https://github.com/alvaroG-IA/Autoencoder-ManifoldLearning-DimensionReduction.git
    cd Autoencoder-ManifoldLearning-DimensionReduction
    ```
+2. Crea y activa el entorno virtual:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate    # Linux/Mac
+   venv\Scripts\activate       # Windows
+   ```
+3. Instala las dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 🚀 Uso rápido
+
+   ```bash
+   python mixed_manifol_detector.py conjunto_train.csv conjunto_test.csv
+   ```
+
+Remplaza `conjunto_train.csv` por la ruta del documento `.csv` que desas utilizar para entrenar el conjunto y `conjunto_test.csv`por la ruta del conjunto de test.
+
+## 📁 Estructura del proyecto
+
+   ```
+   Autoencoder-ManifoldLearning-DimensionReduction/
+   │
+   ├── README.md
+   ├── requirements.txt
+   ├── mixed_manifold_detector.py
+   │
+   └── packages/
+       ├── Utils.py
+       ├── MixedManifoldDetector.py
+       └── autoencoders/
+           ├── Autoencoder.py
+           ├── LinearAutoencoder.py
+           ├── LinearSparseAutoencoder.py
+           └── DenoisingSparseAutoencoder.py
+   ```
+
+- En el script `mixed_manifold_detector.py` encontrarás la logica seguida para ejecutar el sistema.
+- Dentro del directorio `packges/` encontraremos:
+   - `Utils.py`: módulo que recopila diferentes funciones usadas durante la ejecución.
+   - `MixedManifoldDetector.py`: clase principal en la que se desarrolla el sistema.
+   - `autoencoders/`: directorio que recopila todas las implementaciones de los diferentes autoencoders utilizados.
+      - `Autoencoder.py`: interfaz del resto de autoencoders.
+      - `LinearAutoencoder.py`: implementación de la arquitectura de un autoencoder lineal.
+      - `LineasSparseAutoencoder`: implementación de autoencoder lineal con regularización sparse (L1)
+      - `DenoisingSparseAutoencoder`: implementación de autoencoder lineal con tanto regularización sparse como con regularización denoising.
