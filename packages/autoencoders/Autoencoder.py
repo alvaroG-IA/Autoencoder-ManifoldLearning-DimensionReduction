@@ -10,8 +10,8 @@ class Autoencoder(nn.Module, ABC):
     """
     Clase base abstracta para distintos tipos de autoencoders.
     Contiene la lógica común de entrenamiento (fit) y transformación (transform).
-    Las subclases solo necesitan definir el forward (encoder+decoder)
-    y, opcionalmente, un término de regularización.
+    Las subclases solo necesitan definir el forward (encoder+decoder) y encoce (encoder)
+    y, opcionalmente, un término de regularización y ruido.
     """
 
     def __init__(self,
@@ -44,39 +44,38 @@ class Autoencoder(nn.Module, ABC):
     @abstractmethod
     def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
         """
-        Debe devolver (embedding, reconstrucción)
+        Método abstracto de ejecución del modelo. Debe devolver (embedding, reconstrucción)
         """
         pass
 
     @abstractmethod
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Debe devolver (embedding)
+        Método abstracto de ejecución del encoder del modelo. Debe devolver (embedding)
         """
         pass
 
     def regularization(self, embedding: torch.Tensor) -> torch.Tensor:
         """
-        Hook para añadir regularización (ej. sparsity, contractive, etc.)
+        Hook para añadir regularización.
         Por defecto no añade nada.
         """
-        return torch.tensor(0.0, device=embedding.device)
+        return torch.tensor(0.0)
 
     def add_noise(self, data) -> torch.Tensor:
         """
-        Hook para añadir ruido en el caso de usar un Autoencoeder de estructura denoising.
+        Hook para añadir ruido a los datos de entrada.
         Por defecto no añadirá ningún ruido.
         """
         return data
 
-    def fit(self,
-            data: np.ndarray,
-            debug: bool = False):
+    def fit(self, data: np.ndarray, debug: bool = False):
         """
         Método de entrenamiento genérico.
         :param data: datos de entrenamiento
         :param debug: imprimir logs
         """
+        # Convertimos el formato de los datos a uno a coder al modelo
         if isinstance(data, np.ndarray):
             data = torch.tensor(data, dtype=torch.float32)
 
@@ -84,6 +83,7 @@ class Autoencoder(nn.Module, ABC):
         optimizer = self.optimizer_class(self.parameters(), lr=self.lr)
 
         self.train()
+
         last_avg_loss = np.inf
         counter = 0
 
@@ -101,15 +101,13 @@ class Autoencoder(nn.Module, ABC):
 
             avg_loss = total_loss / len(dataloader)
 
-            if debug:
-                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f} - Perdida a comparar {last_avg_loss},"
-                      f" Counter: {counter}")
-
+            # Early stop por perdida menor a cota seleccionada
             if avg_loss < self.loss_threshold:
                 print(f"Entrenamiento detenido en la época {epoch+1}: pérdida {avg_loss:.6f} "
                       f"< threshold {self.loss_threshold:.6f}")
                 break
 
+            # Early stop por falta de mejora en número de iteraciones
             if (last_avg_loss - avg_loss) < self.min_delta:
                 counter += 1
                 if counter == self.max_num_iters_without_progress:
@@ -120,11 +118,15 @@ class Autoencoder(nn.Module, ABC):
                 counter = 0
                 last_avg_loss = avg_loss
 
+            if debug:
+                print(f"Época [{epoch+1}/{self.epochs}] - Pérdida: {avg_loss:.6f} - Perdida a comparar {last_avg_loss},"
+                      f" Counter: {counter}")
+
         self.trained = True
 
     def transform(self, data: np.ndarray) -> torch.Tensor:
         """
-        Devuelve el embedding de los datos usando el encoder.
+        Metodo encargado de calcular y devolver los embeddings de los datos recibidos
         """
         if not self.trained:
             raise NotFittedError("El autoencoder no ha sido entrenado aún.")

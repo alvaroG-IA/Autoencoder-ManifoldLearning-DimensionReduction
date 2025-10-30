@@ -8,30 +8,29 @@ from packages.autoencoders.LinearAutoencoder import LinearAutoencoder
 
 class MixedManifoldDetector:
     def __init__(self,
-                 input_dim: int = None,
                  autoencoder: Autoencoder = None,
-                 manifold_alg: sklearn.base.TransformerMixin = None):
+                 manifold_alg: sklearn.base.TransformerMixin = None,
+                 seed: int = 42):
 
-        # SOLUCIÓN TEMPORAL AL PROBLEMA DE INPUT_DIM EN EL AUTOENCODER POR DEFECTO
-        if autoencoder is None:
-            if input_dim is None:
-                raise ValueError("Si no se ha dado un autoencoder en concreto es obligatorio introducir el valor de "
-                                 "`input_dim`")
-            else:
-                self.autoencoder = LinearAutoencoder(input_dim=input_dim)
-        else:
-            self.autoencoder = autoencoder
-
-        self.manifold_alg = manifold_alg if manifold_alg is not None else TSNE(n_components=2,
-                                                                               perplexity=40,
-                                                                               n_iter_without_progress=50)
+        self.seed = seed
+        self.autoencoder = autoencoder
+        self.manifold_alg = manifold_alg if manifold_alg is not None \
+            else TSNE(n_components=2, perplexity=40, n_iter_without_progress=50, random_state=self.seed)
 
         self.trained = False
         self.train_data = None
         self.train_embeddings = None
         self.train_2d = None
 
-    def fit_transform(self, data: np.ndarray, n_neighbors: int = 5):
+    def fit_transform(self, data: np.ndarray) -> np.ndarray:
+        """
+
+        :param data: datos con los que se entrenará el sistema y de los que se calculará su proyección 2D
+        :return:
+        """
+        if self.autoencoder is None:
+            self.autoencoder = LinearAutoencoder(input_dim=data.shape[1])
+
         self.autoencoder.fit(data=data, debug=True)
         if self.autoencoder.trained:
             print("\n\033[92m[AUTOENCODER ENTRENADO CORRECTAMENTE]\033[0m\n")
@@ -49,16 +48,12 @@ class MixedManifoldDetector:
         self.train_2d = pts2d
         self.trained = True     # marcamos como entrenado correctamente el sistema
 
-        """print(f"\033[94m[TRUSTWORTHINESS RESULTS]\033[0m")
-        tw_final = trustworthiness(data, self.train_2d, n_neighbors=n_neighbors)
-        print(f" - Visualización 2D (original → 2D): {tw_final:.4f}")"""
-
         return pts2d
 
-    def fit(self, data: np.ndarray):
+    def fit(self, data: np.ndarray) -> None:
         self.fit_transform(data)
 
-    def transform(self, data: np.ndarray, k: int = 5):
+    def transform(self, data: np.ndarray, k: int = 5) -> np.ndarray:
         if not self.trained:
             raise RuntimeError("El sistema debe de primero ser entrenado correctamente.")
 
@@ -84,3 +79,22 @@ class MixedManifoldDetector:
                 results.append(avg_2dpoint)
 
         return np.vstack(results)
+
+    def evaluate(self, n_neighbors: int = 5, data_fraction: float = 1.0) -> float:
+        if not (0 <= data_fraction <= 1):
+            raise ValueError("El parámetro 'data_fraction' debe estar en el rango [0, 1].")
+
+        if not self.trained:
+            raise RuntimeError("El modelo debe estar entrenado antes de ejecutar 'evaluate'.")
+
+        split = int(data_fraction * len(self.train_data))
+        print(f"\033[94m[TRUSTWORTHINESS RESULTS]\033[0m")
+
+        tw_final = trustworthiness(
+            self.train_data[:split],
+            self.train_2d[:split],
+            n_neighbors=n_neighbors,
+        )
+
+        print(f" - Trustworthiness de los primeros {split} valores (Original -> 2D): {tw_final:.4f}")
+        return tw_final

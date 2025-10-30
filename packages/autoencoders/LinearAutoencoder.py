@@ -3,6 +3,9 @@ import torch.nn as nn
 
 
 class LinearAutoencoder(Autoencoder):
+    """
+    ---
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -31,9 +34,19 @@ class LinearAutoencoder(Autoencoder):
         )
 
     def forward(self, x):
+        """
+        Implementación del metodo abstracto `forward()` implementado en la clase padre
+        :param x: datos de ejecución
+        :return (embedding, recon): representación latente y reconstrucción de los datos de entrada
+        """
         embedding = self.encoder(x)
-        z = self.decoder(embedding)
-        return embedding, z
+        recon = self.decoder(embedding)
+        return embedding, recon
 
     def encode(self, x):
+        """
+        Implementación del metodo abstracto `encode()` implementado en la clase padre
+        :param x: datos de ejecución
+        :return embedding: representación latente de los datos de entrada
+        """
         return self.encoder(x)
