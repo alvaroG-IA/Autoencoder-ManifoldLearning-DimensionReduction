@@ -6,7 +6,7 @@ Repositorio de proyecto para explorar técnicas de **reducción de dimensión** 
 Este proyecto incluye:
 
 - Código en Python para entrenar un **autoencoder** que reduce la dimensión de datos de alta dimensión.  
-- Implementaciones de técnicas de **manifold learning** (por ejemplo, t-SNE, UMAP, Isomap) para comparar con la representación latente aprendida.  
+- Implementaciones de técnicas de **manifold learning** (por ejemplo, t-SNE, LLe) para comparar con la representación latente aprendida.  
 - Visualizaciones de la dimensión reducida y análisis comparativo de métodos.  
 - Archivo `requirements.txt` con dependencias del proyecto.
 
