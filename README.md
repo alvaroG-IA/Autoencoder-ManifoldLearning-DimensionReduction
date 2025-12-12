@@ -1,4 +1,4 @@
-# Autoencoder-ManifoldLearning-DimensionReduction
+# 📄 Proyecto Académico: Autoencoder-ManifoldLearning-DimensionReduction
 
 Repositorio de proyecto para explorar técnicas de **reducción de dimensión** mediante autoencoders y aprendizaje de variedades (manifold learning).
 
